@@ -1,0 +1,29 @@
+QPushButton,QComboBox,QLineEdit,QProgressBar{
+    border-style:none;
+    border:1px solid #C0DCF2;
+    font: 75 14pt "微软雅黑";
+    height:30px;
+}
+
+QLabel{
+    border-style:none;
+    border:0px solid #C0DCF2;
+    font: 75 14pt "微软雅黑";
+    height:30px;
+}
+
+QProgressBar {
+    width:100px;
+}
+
+QLineEdit#lineEdit_msg0{
+    width:300px;
+}
+
+QPushButton#pushButton_time_0,QPushButton#pushButton_time_1,QPushButton#pushButton_time_2,QPushButton#pushButton_time_3{
+    font: 75 20pt "微软雅黑";
+}
+QLineEdit#lineEdit_msg0,QLineEdit#lineEdit_msg1,QLineEdit#lineEdit_msg2,QLineEdit#lineEdit_msg3{
+    font:75 14px "Times New Roman";
+}
+
