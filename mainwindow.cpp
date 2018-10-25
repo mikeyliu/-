@@ -5,32 +5,22 @@
 #include <QMessageBox>
 #include <QTimer>
 #include <QSerialPortInfo>
+#include <QSettings>
+#include <QThread>
 #include <QDebug>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::MainWindow)
+    ui(new Ui::MainWindow),
+    programFW("\"%1\""),
+    programSSB("\"%1\"")
 {
     ui->setupUi(this);
-    softNameFW = "C:/Program Files (x86)/Neul/UEUpdaterCLI/UEUpdater.exe";
-    softNameSSB = "C:/Program Files (x86)/Neul/SsbLoader/SsbLoader.exe";
-    programFW = "\"%1\"";
-    programSSB = "\"%1\"";
-    programFW = programFW.arg(softNameFW);
-    programSSB = programSSB.arg(softNameSSB);
-
     this->setWindowTitle("量产烧录工具 V1.00 by mikey.liu");
     this->setWindowIcon(QIcon(":/style/title.png"));
-    m_comboBox[0] = ui->comboBox_0;
-    m_comboBox[1] = ui->comboBox_1;
-    m_comboBox[2] = ui->comboBox_2;
-    m_comboBox[3] = ui->comboBox_3;
 
-    m_second[0] = 0;
-    m_second[1] = 0;
-    m_second[2] = 0;
-    m_second[3] = 0;
 
+    init();
     // 查询可用串口
     m_timer.setSingleShot(true);
     m_timer.setInterval(100);
@@ -42,7 +32,6 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(&m_stopWatch[1],&QTimer::timeout,this,&MainWindow::_slotTime1);
     connect(&m_stopWatch[2],&QTimer::timeout,this,&MainWindow::_slotTime2);
     connect(&m_stopWatch[3],&QTimer::timeout,this,&MainWindow::_slotTime3);
-
 }
 
 MainWindow::~MainWindow()
@@ -50,153 +39,134 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+void MainWindow::myMesParsing(int channel, QString msg)
+{
+    statusVec[channel]->setText("烧写中");
+    if(msg.isEmpty()){
+        return;
+    }
+    textVec[channel]->append(msg);
+    textVec[channel]->update();
+    progressVec[channel]->setValue(msg.split("%").at(0).toInt());
+
+    if(msg.contains("SecurityA")){
+        msgVec[channel]->setText("正在烧写安全核心镜像A");
+    }else if(msg.contains("ProtocolA")){
+        msgVec[channel]->setText("正在烧写协议核心镜像A");
+    }else if(msg.contains("SecurityB")){
+        msgVec[channel]->setText("正在烧写安全核心镜像B");
+    }else if(msg.contains("ApplicationA")){
+        msgVec[channel]->setText("正在烧写应用核心镜像A");
+    }else if(msg.contains("frontend")){
+        msgVec[channel]->setText("前端配置");
+    }else if(msg.contains("general")){
+        msgVec[channel]->setText("常规配置");
+    }else if(msg.contains("image")){
+        msgVec[channel]->setText("SSB加载中");
+    }else if(msg.contains("Sorry")){
+        statusVec[channel]->setText("已烧写SSB");
+        qDebug()<<statusVec[channel]->text();
+        burningUE(channel);
+        return;
+    }else if(msg.contains("finished") || msg.contains("Finished")){
+        m_second[channel]=0;
+        m_stopWatch[channel].stop();
+        qDebug()<<"修改之前的文本"<<statusVec[channel]->text();
+        statusVec[channel]->setText("烧写完成");
+        qDebug()<<"修改之后的文本"<<statusVec[channel]->text();
+        return;
+    }else{
+        msgVec[channel]->setText(msg);
+    }
+    qDebug()<<"收到的消息"<<msg;
+}
+
 // UpdateAll --in TK05_SW_V3.4-B018.fwpkg --port com3
-void MainWindow::on_pushButton_start0_clicked()
+void MainWindow::burningUE(int channel)
 {
-    ui->pushButton_status_0->setText("连接中");
+    process[channel].close();
+    statusVec[channel]->setText("连接中");
     if(ui->lineEdit_FW->text().isEmpty()) {
         QMessageBox::information(this,"提示","请先选择FW文件");
+        statusVec[channel]->setText("");
         return;
     }
-    m_stopWatch[0].start(1000);
-    argument<<"UpdateAll"<<"--in"<<fileNameFW<<"--port"<<ui->comboBox_0->currentText();
-    connect(&process[0],&QProcess::readyReadStandardOutput,this,&MainWindow::_slotReadMsg_0);
-    process[0].start(programFW,argument);
-}
-void MainWindow::on_pushButton_start1_clicked()
-{
-    ui->pushButton_status_1->setText("连接中");
-    if(ui->lineEdit_FW->text().isEmpty()) {
-        QMessageBox::information(this,"提示","请先选择FW文件");
-        return;
-    }
-    m_stopWatch[1].start(1000);
-    argument<<"UpdateAll"<<"--in"<<fileNameFW<<"--port"<<ui->comboBox_1->currentText();
-    connect(&process[1],&QProcess::readyReadStandardOutput,this,&MainWindow::_slotReadMsg_1);
-    process[1].start(programFW,argument);
-}
-
-void MainWindow::on_pushButton_start2_clicked()
-{
-    ui->pushButton_status_2->setText("连接中");
-    if(ui->lineEdit_FW->text().isEmpty()) {
-        QMessageBox::information(this,"提示","请先选择FW文件");
-        return;
-    }
-    m_stopWatch[2].start(1000);
-    argument<<"UpdateAll"<<"--in"<<fileNameFW<<"--port"<<ui->comboBox_2->currentText();
-    connect(&process[2],&QProcess::readyReadStandardOutput,this,&MainWindow::_slotReadMsg_2);
-    process[2].start(programFW,argument);
-}
-
-void MainWindow::on_pushButton_start3_clicked()
-{
-    ui->pushButton_status_3->setText("连接中");
-    if(ui->lineEdit_FW->text().isEmpty()) {
-        QMessageBox::information(this,"提示","请先选择FW文件");
-        return;
-    }
-    m_stopWatch[3].start(1000);
-    argument<<"UpdateAll"<<"--in"<<fileNameFW<<"--port"<<ui->comboBox_3->currentText();
-    connect(&process[3],&QProcess::readyReadStandardOutput,this,&MainWindow::_slotReadMsg_3);
-    process[3].start(programFW,argument);
+    QStringList argument;
+    argument<<"UpdateAll"<<"--In"<<fileNameFW<<"--port"<<m_comboBox[channel]->currentText();
+    connect(&process[channel],&QProcess::readyReadStandardOutput,this,_slotReadMsgF[channel]);
+    process[channel].start(programFW,argument);
 }
 
 void MainWindow::_slotReadMsg_0()
 {
-    ui->pushButton_status_0->setText("刷写中");
-    QString receMsg = QString::fromLocal8Bit(process[0].readAllStandardOutput());
-    ui->lineEdit_msg0->setText(receMsg);
-    if(receMsg.contains("Application finished")){
-        ui->pushButton_status_0->setText("刷写成功");
-        m_stopWatch[0].stop();
-        return;
-    }
-    myMesParsing(receMsg);
+    QString recMsg = QString::fromLocal8Bit(process[0].readAllStandardOutput());
+     myMesParsing(0,recMsg.simplified());
 }
 
 void MainWindow::_slotReadMsg_1()
 {
-    ui->pushButton_status_1->setText("刷写中");
-    QString receMsg = QString::fromLocal8Bit(process[1].readAllStandardOutput());
-    ui->lineEdit_msg1->setText(receMsg);
-    if(receMsg.contains("Application finished")){
-        ui->pushButton_status_1->setText("刷写成功");
-        m_stopWatch[1].stop();
-        return;
-    }
-    myMesParsing(receMsg);
+    QString recMsg = QString::fromLocal8Bit(process[1].readAllStandardOutput());
+    myMesParsing(1,recMsg.simplified());
 }
 
 void MainWindow::_slotReadMsg_2()
 {
-    ui->pushButton_status_2->setText("刷写中");
-    QString receMsg = QString::fromLocal8Bit(process[1].readAllStandardOutput());
-    ui->lineEdit_msg2->setText(receMsg);
-    if(receMsg.contains("Application finished")){
-        ui->pushButton_status_2->setText("刷写成功");
-        m_stopWatch[2].stop();
-        return;
-    }
-    myMesParsing(receMsg);
+    QString recMsg = QString::fromLocal8Bit(process[1].readAllStandardOutput());
+    myMesParsing(2,recMsg.simplified());
 }
 
 void MainWindow::_slotReadMsg_3()
 {
-    ui->pushButton_status_3->setText("刷写中");
-    QString receMsg = QString::fromLocal8Bit(process[3].readAllStandardOutput());
-    ui->lineEdit_msg3->setText(receMsg);
-    if(receMsg.contains("Application finished")){
-        ui->pushButton_status_3->setText("刷写成功");
-        m_stopWatch[3].stop();
-        return;
-    }
-    myMesParsing(receMsg);
+    QString recMsg = QString::fromLocal8Bit(process[3].readAllStandardOutput());
+    myMesParsing(3,recMsg.simplified());
 }
 
 void MainWindow::_slotTime0()
 {
     m_second[0] += 1;
     ui->pushButton_time_0->setText(QString::number(m_second[0]));
+    ui->pushButton_status_0->setText("......");
 }
 
 void MainWindow::_slotTime1()
 {
     m_second[1] += 1;
     ui->pushButton_time_1->setText(QString::number(m_second[1]));
+    ui->pushButton_status_1->setText("......");
 }
 
 void MainWindow::_slotTime2()
 {
     m_second[2] += 1;
     ui->pushButton_time_2->setText(QString::number(m_second[2]));
+    ui->pushButton_status_2->setText("......");
 }
 
 void MainWindow::_slotTime3()
 {
     m_second[3] += 1;
     ui->pushButton_time_3->setText(QString::number(m_second[3]));
-}
-
-void MainWindow::myMesParsing(QString msg)
-{
-    if(msg.isEmpty()){
-        return;
-    }
-    progressNum = msg.split("%").at(0).toInt();
-    ui->progressBar->setValue(progressNum);
+    ui->pushButton_status_3->setText("......");
 }
 
 void MainWindow::on_pushButton_SSB_clicked()
 {
     fileNameSSB = QFileDialog::getOpenFileName(this,tr("Open file"),QDir::currentPath());
     ui->lineEdit_SSB->setText(fileNameSSB);
+    QSettings settings("config.ini", QSettings::IniFormat);
+    settings.beginGroup("firmWare");
+    settings.setValue("SSB",fileNameSSB);
+    settings.endGroup();
 }
 
 void MainWindow::on_pushButton_FW_clicked()
 {
     fileNameFW = QFileDialog::getOpenFileName(this,tr("Open file"),QDir::currentPath());
     ui->lineEdit_FW->setText(fileNameFW);
+    QSettings settings("config.ini", QSettings::IniFormat);
+    settings.beginGroup("firmWare");
+    settings.setValue("UE",fileNameFW);
+    settings.endGroup();
 }
 
 void MainWindow::_slotQueryPortInfo()
@@ -215,7 +185,7 @@ void MainWindow::_slotQueryPortInfo()
                 ||(info.description() == "USB Modem Driver"))
         {
             now_portInfoList << info;
-            portName [nCurSize++] = /*info.description()+*/info.portName();
+            portName [nCurSize++] = info.portName();
         }
 
     }
@@ -244,29 +214,131 @@ void MainWindow::on_soft_triggered()
 {
     softNameFW = QFileDialog::getOpenFileName(this,"UE Updater",QDir::currentPath());
     programFW = programFW.arg(softNameFW);
+
+    QSettings settings("config.ini", QSettings::IniFormat);
+    settings.beginGroup("soft");
+    settings.setValue("UE",softNameFW);
+    settings.endGroup();
 }
 
 void MainWindow::on_action_SSB_Loader_triggered()
 {
     softNameSSB = QFileDialog::getOpenFileName(this,"SSB loader",QDir::currentPath());
     programSSB = programSSB.arg(softNameSSB);
+    QSettings settings("config.ini", QSettings::IniFormat);
+    settings.beginGroup("soft");
+    settings.setValue("SSB",softNameSSB);
+    settings.endGroup();
 }
 
 void MainWindow::on_actionabout_triggered()
 {
 
 }
-
+// loadfirst -p port -i filename
 void MainWindow::on_pushButton_start0_2_clicked()
 {
-    ui->pushButton_status_0->setText("连接中");
+    statusVec[0]->setText("连接中");
     if(ui->lineEdit_SSB->text().isEmpty()) {
         QMessageBox::information(this,"提示","请先选择SSB文件");
-        ui->pushButton_status_0->setText("");
+        statusVec[0]->setText("");
         return;
     }
     m_stopWatch[0].start(1000);
-    argument<<"UpdateAll"<<"--in"<<fileNameFW<<"--port"<<ui->comboBox_3->currentText();
+    QStringList argument;
+    argument<<"loadfirst"<<"-p"<<m_comboBox[0]->currentText()<< "-i" <<fileNameSSB;
+    connect(&process[0],&QProcess::readyReadStandardOutput,this,&MainWindow::_slotReadMsg_0);
+    process[0].start(programSSB,argument);
+}
+
+void MainWindow::on_pushButton_start1_1_clicked()
+{
+    statusVec[1]->setText("连接中");
+    if(ui->lineEdit_SSB->text().isEmpty()) {
+        QMessageBox::information(this,"提示","请先选择SSB文件");
+        statusVec[1]->setText("");
+        return;
+    }
+    m_stopWatch[1].start(1000);
+    QStringList argument;
+    argument<<"loadfirst"<<"-p"<<m_comboBox[1]->currentText()<< "-i" <<fileNameSSB;
+    connect(&process[1],&QProcess::readyReadStandardOutput,this,&MainWindow::_slotReadMsg_1);
+    process[1].start(programSSB,argument);
+
+}
+
+void MainWindow::on_pushButton_start2_2_clicked()
+{
+    statusVec[2]->setText("连接中");
+    if(ui->lineEdit_SSB->text().isEmpty()) {
+        QMessageBox::information(this,"提示","请先选择SSB文件");
+        statusVec[2]->setText("");
+        return;
+    }
+    m_stopWatch[2].start(1000);
+    QStringList argument;
+    argument<<"loadfirst"<<"-p"<<m_comboBox[2]->currentText()<< "-i" <<fileNameSSB;
+    connect(&process[2],&QProcess::readyReadStandardOutput,this,&MainWindow::_slotReadMsg_2);
+    process[2].start(programSSB,argument);
+}
+
+void MainWindow::on_pushButton_start3_3_clicked()
+{
+    statusVec[3]->setText("连接中");
+    if(ui->lineEdit_SSB->text().isEmpty()) {
+        QMessageBox::information(this,"提示","请先选择SSB文件");
+        statusVec[3]->setText("");
+        return;
+    }
+    m_stopWatch[3].start(1000);
+    QStringList argument;
+    argument<<"loadfirst"<<"-p"<<m_comboBox[3]->currentText()<< "-i" <<fileNameSSB;
     connect(&process[3],&QProcess::readyReadStandardOutput,this,&MainWindow::_slotReadMsg_3);
-    process[3].start(programFW,argument);
+    process[3].start(programSSB,argument);
+}
+
+void MainWindow::init()
+{
+    textVec <<ui->textEdit<<ui->textEdit_2<<ui->textEdit_3<<ui->textEdit_4;
+    msgVec<<ui->lineEdit_msg0<<ui->lineEdit_msg1<<ui->lineEdit_msg2<<ui->lineEdit_msg3;
+    statusVec<< ui->pushButton_status_0 << ui->pushButton_status_1 << ui->pushButton_status_2 << ui->pushButton_status_3;
+    m_comboBox<<ui->comboBox_0<<ui->comboBox_1<<ui->comboBox_2<<ui->comboBox_3;
+    progressVec<<ui->progressBar_0<<ui->progressBar_1<<ui->progressBar_2<<ui->progressBar_3;
+    m_second[0] = 0;
+    m_second[1] = 0;
+    m_second[2] = 0;
+    m_second[3] = 0;
+    _slotReadMsgF<<&MainWindow::_slotReadMsg_0<<&MainWindow::_slotReadMsg_1<<&MainWindow::_slotReadMsg_2<<&MainWindow::_slotReadMsg_3;
+    QSettings settings("config.ini", QSettings::IniFormat);
+    ui->lineEdit_FW->setText(settings.value("firmWare/UE").toString());
+    ui->lineEdit_SSB->setText(settings.value("firmWare/SSB").toString());
+    fileNameFW = ui->lineEdit_FW->text();
+    fileNameSSB = ui->lineEdit_SSB->text();
+
+    softNameFW = settings.value("soft/UE").toString();
+    softNameSSB = settings.value("soft/SSB").toString();
+
+    programFW = programFW.arg(softNameFW);
+    programSSB =programSSB.arg(softNameSSB);
+
+    for(int i=0;i<textVec.size();i++){
+        textVec[i]->hide();
+    }
+    this->resize(1024,300);
+}
+
+void MainWindow::on_actionhide_triggered()
+{
+    for(int i=0;i<textVec.size();i++){
+        textVec[i]->hide();
+    }
+    this->resize(1024,300);
+}
+
+void MainWindow::on_actionshow_triggered()
+{
+    for(int i=0;i<textVec.size();i++){
+        textVec[i]->show();
+    }
+    this->resize(1024,750);
 }

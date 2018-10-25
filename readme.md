@@ -1,6 +1,6 @@
 # 量产固件烧录工具 V1.00
 
-> 开发环境:Qt5.9.3(Qt Creator 4.4.1) 开发 编译:MinGW 5.3.0 (32-bit)
+> 开发环境:Qt5.9.3(Qt Creator 4.4.1)  MinGW 5.3.0 (32-bit)
 
 通过调用华为UEUpdaterCLI-3.22.0.14和SsbLoader-3.22.0.14分别烧录UE和SSB;
 
@@ -11,3 +11,5 @@
 5. 拥有一个秒表计时器(不精准)
 6. 支持四路同时进行
 7. 简单的修改外观样式
+
+> 其它: void _slotQueryPortInfo(); // 查询串口信息,需添加QT += serialport

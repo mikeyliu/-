@@ -35,3 +35,6 @@ FORMS += \
 
 RESOURCES += \
     resource/res.qrc
+
+DISTFILES += \
+    readme.md
