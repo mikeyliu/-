@@ -291,28 +291,28 @@
              </widget>
             </item>
             <item>
-             <widget class="QPushButton" name="pushButton_start0_2">
+             <widget class="QPushButton" name="pushButton_start0">
               <property name="text">
                <string>开始</string>
               </property>
              </widget>
             </item>
             <item>
-             <widget class="QPushButton" name="pushButton_start1_1">
+             <widget class="QPushButton" name="pushButton_start1">
               <property name="text">
                <string>开始</string>
               </property>
              </widget>
             </item>
             <item>
-             <widget class="QPushButton" name="pushButton_start2_2">
+             <widget class="QPushButton" name="pushButton_start2">
               <property name="text">
                <string>开始</string>
               </property>
              </widget>
             </item>
             <item>
-             <widget class="QPushButton" name="pushButton_start3_3">
+             <widget class="QPushButton" name="pushButton_start3">
               <property name="text">
                <string>开始</string>
               </property>

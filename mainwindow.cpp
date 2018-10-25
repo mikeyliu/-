@@ -41,7 +41,6 @@ MainWindow::~MainWindow()
 
 void MainWindow::myMesParsing(int channel, QString msg)
 {
-    statusVec[channel]->setText("烧写中");
     if(msg.isEmpty()){
         return;
     }
@@ -64,21 +63,16 @@ void MainWindow::myMesParsing(int channel, QString msg)
     }else if(msg.contains("image")){
         msgVec[channel]->setText("SSB加载中");
     }else if(msg.contains("Sorry")){
-        statusVec[channel]->setText("已烧写SSB");
-        qDebug()<<statusVec[channel]->text();
         burningUE(channel);
         return;
     }else if(msg.contains("finished") || msg.contains("Finished")){
         m_second[channel]=0;
         m_stopWatch[channel].stop();
-        qDebug()<<"修改之前的文本"<<statusVec[channel]->text();
         statusVec[channel]->setText("烧写完成");
-        qDebug()<<"修改之后的文本"<<statusVec[channel]->text();
         return;
     }else{
         msgVec[channel]->setText(msg);
     }
-    qDebug()<<"收到的消息"<<msg;
 }
 
 // UpdateAll --in TK05_SW_V3.4-B018.fwpkg --port com3
@@ -125,28 +119,28 @@ void MainWindow::_slotTime0()
 {
     m_second[0] += 1;
     ui->pushButton_time_0->setText(QString::number(m_second[0]));
-    ui->pushButton_status_0->setText("......");
+    statusVec[0]->setText("烧写中");
 }
 
 void MainWindow::_slotTime1()
 {
     m_second[1] += 1;
     ui->pushButton_time_1->setText(QString::number(m_second[1]));
-    ui->pushButton_status_1->setText("......");
+    statusVec[1]->setText("烧写中");
 }
 
 void MainWindow::_slotTime2()
 {
     m_second[2] += 1;
     ui->pushButton_time_2->setText(QString::number(m_second[2]));
-    ui->pushButton_status_2->setText("......");
+    statusVec[2]->setText("烧写中");
 }
 
 void MainWindow::_slotTime3()
 {
     m_second[3] += 1;
     ui->pushButton_time_3->setText(QString::number(m_second[3]));
-    ui->pushButton_status_3->setText("......");
+    statusVec[3]->setText("烧写中");
 }
 
 void MainWindow::on_pushButton_SSB_clicked()
@@ -236,7 +230,7 @@ void MainWindow::on_actionabout_triggered()
 
 }
 // loadfirst -p port -i filename
-void MainWindow::on_pushButton_start0_2_clicked()
+void MainWindow::on_pushButton_start0_clicked()
 {
     statusVec[0]->setText("连接中");
     if(ui->lineEdit_SSB->text().isEmpty()) {
@@ -251,7 +245,7 @@ void MainWindow::on_pushButton_start0_2_clicked()
     process[0].start(programSSB,argument);
 }
 
-void MainWindow::on_pushButton_start1_1_clicked()
+void MainWindow::on_pushButton_start1_clicked()
 {
     statusVec[1]->setText("连接中");
     if(ui->lineEdit_SSB->text().isEmpty()) {
@@ -264,10 +258,9 @@ void MainWindow::on_pushButton_start1_1_clicked()
     argument<<"loadfirst"<<"-p"<<m_comboBox[1]->currentText()<< "-i" <<fileNameSSB;
     connect(&process[1],&QProcess::readyReadStandardOutput,this,&MainWindow::_slotReadMsg_1);
     process[1].start(programSSB,argument);
-
 }
 
-void MainWindow::on_pushButton_start2_2_clicked()
+void MainWindow::on_pushButton_start2_clicked()
 {
     statusVec[2]->setText("连接中");
     if(ui->lineEdit_SSB->text().isEmpty()) {
@@ -282,7 +275,7 @@ void MainWindow::on_pushButton_start2_2_clicked()
     process[2].start(programSSB,argument);
 }
 
-void MainWindow::on_pushButton_start3_3_clicked()
+void MainWindow::on_pushButton_start3_clicked()
 {
     statusVec[3]->setText("连接中");
     if(ui->lineEdit_SSB->text().isEmpty()) {

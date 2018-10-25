@@ -39,10 +39,10 @@ private slots:
     void on_soft_triggered();
     void on_actionabout_triggered();
     void on_action_SSB_Loader_triggered();
-    void on_pushButton_start0_2_clicked();
-    void on_pushButton_start1_1_clicked();
-    void on_pushButton_start2_2_clicked();
-    void on_pushButton_start3_3_clicked();
+    void on_pushButton_start0_clicked();
+    void on_pushButton_start1_clicked();
+    void on_pushButton_start2_clicked();
+    void on_pushButton_start3_clicked();
     void on_actionhide_triggered();
     void on_actionshow_triggered();
 
@@ -68,6 +68,7 @@ private:
     void init();
     void burningUE(int channel);
     void myMesParsing(int channel, QString msg);
+    bool stopProgress(int channel);
 };
 
 #endif // MAINWINDOW_H
