@@ -16,11 +16,12 @@ MainWindow::MainWindow(QWidget *parent) :
     programSSB("\"%1\"")
 {
     ui->setupUi(this);
-    this->setWindowTitle("量产烧录工具 V1.00 by mikey.liu");
+    this->setWindowTitle("量产烧录工具 V1.00 ");
     this->setWindowIcon(QIcon(":/style/title.png"));
-
+    this->setWindowFlags(Qt::Dialog);
 
     init();
+
     // 查询可用串口
     m_timer.setSingleShot(true);
     m_timer.setInterval(100);
@@ -74,6 +75,8 @@ void MainWindow::myMesParsing(int channel, QString msg)
         msgVec[channel]->setText(msg);
     }
 }
+
+
 
 // UpdateAll --in TK05_SW_V3.4-B018.fwpkg --port com3
 void MainWindow::burningUE(int channel)
@@ -229,13 +232,26 @@ void MainWindow::on_actionabout_triggered()
 {
 
 }
+
+bool MainWindow::isReady(int channel)
+{
+    statusVec[channel]->setText("连接中");
+    if(ui->lineEdit_SSB->text().isEmpty() ) {
+        QMessageBox::information(this,"提示","请先选择SSB文件");
+        statusVec[channel]->setText("");
+        return false;
+    }
+    if(m_comboBox[channel]->currentText().isEmpty()){
+        QMessageBox::information(this,"提示","设备未连接");
+        statusVec[channel]->setText("");
+        return false;
+    }
+    return true;
+}
 // loadfirst -p port -i filename
 void MainWindow::on_pushButton_start0_clicked()
 {
-    statusVec[0]->setText("连接中");
-    if(ui->lineEdit_SSB->text().isEmpty()) {
-        QMessageBox::information(this,"提示","请先选择SSB文件");
-        statusVec[0]->setText("");
+    if(!isReady(0)){
         return;
     }
     m_stopWatch[0].start(1000);
@@ -247,10 +263,7 @@ void MainWindow::on_pushButton_start0_clicked()
 
 void MainWindow::on_pushButton_start1_clicked()
 {
-    statusVec[1]->setText("连接中");
-    if(ui->lineEdit_SSB->text().isEmpty()) {
-        QMessageBox::information(this,"提示","请先选择SSB文件");
-        statusVec[1]->setText("");
+    if(!isReady(1)){
         return;
     }
     m_stopWatch[1].start(1000);
@@ -262,10 +275,7 @@ void MainWindow::on_pushButton_start1_clicked()
 
 void MainWindow::on_pushButton_start2_clicked()
 {
-    statusVec[2]->setText("连接中");
-    if(ui->lineEdit_SSB->text().isEmpty()) {
-        QMessageBox::information(this,"提示","请先选择SSB文件");
-        statusVec[2]->setText("");
+    if(!isReady(2)){
         return;
     }
     m_stopWatch[2].start(1000);
@@ -277,10 +287,7 @@ void MainWindow::on_pushButton_start2_clicked()
 
 void MainWindow::on_pushButton_start3_clicked()
 {
-    statusVec[3]->setText("连接中");
-    if(ui->lineEdit_SSB->text().isEmpty()) {
-        QMessageBox::information(this,"提示","请先选择SSB文件");
-        statusVec[3]->setText("");
+    if(!isReady(3)){
         return;
     }
     m_stopWatch[3].start(1000);
@@ -322,10 +329,10 @@ void MainWindow::init()
 
 void MainWindow::on_actionhide_triggered()
 {
+    this->resize(QSize(1024,258));
     for(int i=0;i<textVec.size();i++){
         textVec[i]->hide();
     }
-    this->resize(1024,300);
 }
 
 void MainWindow::on_actionshow_triggered()

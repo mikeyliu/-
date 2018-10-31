@@ -69,6 +69,7 @@ private:
     void burningUE(int channel);
     void myMesParsing(int channel, QString msg);
     bool stopProgress(int channel);
+    bool isReady(int channel);
 };
 
 #endif // MAINWINDOW_H
